@@ -142,8 +142,27 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
+# Dependencies and build outputs
 node_modules/
 dist/
 build/
 
+node_modules/
+
+# Environment variables (Crucial for DB credentials)
 .env
+.env.local
+.env.*.local
+
+# Sequelize-specific
+# If using SQLite for local development
+*.sqlite
+*.sqlite-journal
+
+# Config files with sensitive info
+# (Only if you aren't using .env files for configuration)
+config/config.json
+
+# Build outputs (if using TypeScript)
+dist/
+lib/
