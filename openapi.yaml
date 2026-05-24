@@ -1,0 +1,368 @@
+openapi: 3.0.0
+info:
+  title: School Administration System API
+  version: 1.0.0
+  description: API documentation for the School Administration System. This system allows School administrators and Teachers to perform administrative functions on their students.
+  contact:
+    name: School Administration
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://api.school.example.com
+    description: Production server
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Data Import
+    description: CSV data import endpoints
+  - name: Students
+    description: Student management endpoints
+  - name: Classes
+    description: Class management endpoints
+  - name: Reports
+    description: Report generation endpoints
+
+paths:
+  /healthcheck:
+    get:
+      summary: Health Check
+      description: Check if the server is running and healthy
+      operationId: getHealthcheck
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Server is healthy
+
+  /upload:
+    post:
+      summary: Import CSV Data
+      description: Import student, class, and teacher data from a CSV file
+      operationId: uploadCSV
+      tags:
+        - Data Import
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: string
+                  format: binary
+                  description: CSV file containing student and class data
+              required:
+                - data
+      responses:
+        "204":
+          description: Data imported successfully
+        "400":
+          description: Bad Request - Invalid CSV format or missing file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /class/{classCode}/students:
+    get:
+      summary: Get Students by Class
+      description: Retrieve paginated list of students in a specific class
+      operationId: getStudentsByClass
+      tags:
+        - Students
+      parameters:
+        - name: classCode
+          in: path
+          description: Unique class identifier
+          required: true
+          schema:
+            type: string
+          example: CLASS-001
+        - name: offset
+          in: query
+          description: Number of records to skip (must be >= 0)
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          example: 0
+        - name: limit
+          in: query
+          description: Number of records to return (must be > 0)
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          example: 10
+      responses:
+        "200":
+          description: List of students retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedStudentResponse"
+        "400":
+          description: Bad Request - Invalid offset or limit parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not Found - Class does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /class/{classCode}:
+    put:
+      summary: Update Class Name
+      description: Update the name of a specific class
+      operationId: updateClassName
+      tags:
+        - Classes
+      parameters:
+        - name: classCode
+          in: path
+          description: Unique class identifier
+          required: true
+          schema:
+            type: string
+          example: CLASS-001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClassNameRequest"
+      responses:
+        "204":
+          description: Class name updated successfully
+        "400":
+          description: Bad Request - Missing or invalid className
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not Found - Class does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /reports/workload:
+    get:
+      summary: Get Workload Report
+      description: Generate a workload report showing all teachers and their class assignments
+      operationId: getWorkloadReport
+      tags:
+        - Reports
+      responses:
+        "200":
+          description: Workload report generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkloadReport"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Student:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique student identifier
+          example: 1
+        email:
+          type: string
+          format: email
+          description: Student email address (unique)
+          example: john.doe@example.com
+        name:
+          type: string
+          description: Student full name
+          example: John Doe
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when student was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when student was last updated
+      required:
+        - id
+        - email
+        - name
+
+    PaginatedStudentResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of students in the class
+          example: 100
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Student"
+          description: Array of student objects
+      required:
+        - total
+        - data
+
+    SchoolClass:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique class identifier
+          example: 1
+        classCode:
+          type: string
+          description: Unique class code
+          example: CLASS-001
+        className:
+          type: string
+          description: Human-readable class name
+          example: 10th Grade - Section A
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when class was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when class was last updated
+      required:
+        - id
+        - classCode
+        - className
+
+    UpdateClassNameRequest:
+      type: object
+      properties:
+        className:
+          type: string
+          description: New class name
+          example: 10th Grade - Section B
+      required:
+        - className
+
+    Teacher:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Teacher email address
+          example: teacher@example.com
+        name:
+          type: string
+          description: Teacher full name
+          example: Jane Smith
+
+    Subject:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Subject code
+          example: MATH-101
+        name:
+          type: string
+          description: Subject name
+          example: Mathematics
+
+    TeachingAssignment:
+      type: object
+      properties:
+        teacherEmail:
+          type: string
+          format: email
+          description: Email of the teacher
+          example: teacher@example.com
+        teacherName:
+          type: string
+          description: Full name of the teacher
+          example: Jane Smith
+        subjectCode:
+          type: string
+          description: Code of the subject being taught
+          example: MATH-101
+        subjectName:
+          type: string
+          description: Name of the subject being taught
+          example: Mathematics
+        classCode:
+          type: string
+          description: Code of the class
+          example: CLASS-001
+
+    WorkloadReport:
+      type: object
+      properties:
+        teachers:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+              name:
+                type: string
+              totalClasses:
+                type: integer
+              assignments:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeachingAssignment"
+          description: Array of teachers with their workload
+
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: Bad Request
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when error occurred
+      required:
+        - statusCode
+        - message
