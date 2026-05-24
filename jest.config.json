@@ -1,4 +1,10 @@
 {
   "testEnvironment": "node",
-  "preset": "ts-jest"
+  "preset": "ts-jest",
+  "moduleDirectories": ["node_modules", "<rootDir>/src/types"],
+  "globals": {
+    "ts-jest": {
+      "tsconfig": "./tsconfig.json"
+    }
+  }
 }
