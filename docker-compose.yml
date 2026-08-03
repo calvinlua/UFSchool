@@ -19,6 +19,7 @@ services:
       context: ../external
       dockerfile: external-system.Dockerfile
     image: school-administration-system-external:1.0
+    pull_policy: build
     environment:
       TZ: Asia/Singapore
       NODE_ENV: production
